@@ -9,9 +9,12 @@
 #include <future>
 #include <functional>
 #include <vector>
+#include <list>
 #include <string>
 #include <iostream>
+#include "ThreadTest0.h"
 
+using namespace TestUtil;
 
 #if 0
 using namespace std;
@@ -236,7 +239,7 @@ int test(int argc, _TCHAR* argv[]){
 #endif
 
 
-#if 1
+#if 0
 std::mutex				g_mutexPrint;
 
 void Print(const int& index, const std::thread::id& threadID){
@@ -278,6 +281,62 @@ int test(int argc, _TCHAR* argv[]){
 #endif
 
 
+#if 1
+static std::mutex				__mutex;
+static std::list<int>			__list;
+
+void ThreadRoutine(int index){
+	for (int i = 0; i < 10; i++){
+// 		if (true){
+// 		}
+//		std::unique_lock<std::mutex> guard(__mutex);
+		int value = index * 10 + i;
+		__list.push_back(value);
+		if (value % 3 == 0){
+			__list.remove(value);
+		}
+// 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+}
+
+
+int ThreadTest0::test(int argc, _TCHAR* argv[]){
+	const int threadCount			= 10;
+	
+	std::vector<std::thread*> threads;
+
+	for (int i = 0; i < threadCount; i++){
+		threads.push_back(new std::thread(ThreadRoutine, i));
+	}
+
+	for (auto&& thread : threads){
+		thread->join();
+	}
+
+	for (auto&& thread : threads){
+		delete thread;
+		thread = nullptr;
+	}
+
+	int count			= 0;
+	for (auto&& value : __list){
+		std::cout << value << " ";
+		count++;
+		if (count % 10 == 0){
+			std::cout << "\n";
+		}
+	}
+
+	if (count % 10 != 0){
+		std::cout << std::endl;
+	}
+
+	return 0;
+}
+
+#endif
+
+
 /*
  * 1. join call in main method usually at the end of it for wait another thread execute over.
  * 2. std::cout can be block in multithread program!
@@ -285,8 +344,9 @@ int test(int argc, _TCHAR* argv[]){
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	test(argc, argv);
+	new ThreadTest0;
 
+	Test::getInstance()->test(argc, argv);
 	system("pause");
 	return 0;
 }
